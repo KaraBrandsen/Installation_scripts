@@ -13,8 +13,8 @@ INSTALL_LIBRE_SPEEDTEST=true
 source "secrets.sh"
 
 #Variables
-ZT_TOKEN= 	                                #Your Zerotier API Token - Get this from https://my.zerotier.com/account -> "new token"
-NWID= 						                #Your Zerotier Network ID - Get this from https://my.zerotier.com/
+ZT_TOKEN=$ZT_TOKEN 	                        #Your Zerotier API Token - Get this from https://my.zerotier.com/account -> "new token"
+NWID=$NWID  				                #Your Zerotier Network ID - Get this from https://my.zerotier.com/
 PHY_IFACE=default 							#The Network Interface to use - Default auto detects the interface
 DNS_1=8.8.8.8 								#DNS Server used by your ISP - Get this from ifconfig/connection properties on any PC or from your router. Leave as is to use Google's DNS server
 DNS_2=8.8.4.4 								#DNS Server used by your ISP - Get this from ifconfig/connection properties on any PC or from your router. Leave as is to use Google's DNS server
