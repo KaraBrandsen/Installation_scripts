@@ -1,10 +1,11 @@
 #!/bin/bash
+source "secrets.sh"
 
 #Variables
-ZT_TOKEN=
-NWID=
-WIN_USER=
-WIN_PASS=
+ZT_TOKEN=$ZT_TOKEN
+NWID=$NWID
+WIN_USER=$WIN_USER
+WIN_PASS=$WIN_PASS
 
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
