@@ -6,8 +6,11 @@
 
 #Settings
 INSTALL_PIHOLE=true							#Install Pihole - set to false to skip
-INSTALL_ZEROTIER=true						#Install Zerotier - set to false to skip
+INSTALL_ZEROTIER_ROUTER=true				#Install Zerotier - set to false to skip
 INSTALL_HASS=true							#Install Home Assistant - set to false to skip
+INSTALL_LIBRE_SPEEDTEST=true
+
+source "secrets.sh"
 
 #Variables
 ZT_TOKEN= 	                                #Your Zerotier API Token - Get this from https://my.zerotier.com/account -> "new token"
@@ -30,7 +33,7 @@ apt upgrade -y
 apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils -y
 
 #Zerotier Router Setup
-if [ "$INSTALL_ZEROTIER" == "true" ]
+if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]
 then
 	if [ "$PHY_IFACE" == "default" ]
 	then
@@ -157,6 +160,64 @@ then
 	systemctl start home-assistant@homeassistant
 fi
 
+if [ "$INSTALL_LIBRE_SPEEDTEST" == "true" ]
+then
+    apt install nginx mysql-server php-fpm php-mysql php-image-text php-gd php-sqlite3 -y
+
+    mkdir -p /var/www/html/speedtest
+    chown -R $SUDO_USER:$SUDO_USER /var/www/html/speedtest
+
+    rm -rf /etc/nginx/sites-available/speedtest
+
+    echo "server {" > /etc/nginx/sites-available/speedtest
+    echo "    listen 11000;" >> /etc/nginx/sites-available/speedtest
+    echo "    server_name speedtest www.speedtest;" >> /etc/nginx/sites-available/speedtest
+    echo "    root /var/www/html/speedtest;" >> /etc/nginx/sites-available/speedtest
+    echo "" >> /etc/nginx/sites-available/speedtest
+    echo "    index index.html index.htm index.php;" >> /etc/nginx/sites-available/speedtest
+    echo "" >> /etc/nginx/sites-available/speedtest
+    echo "    location / {" >> /etc/nginx/sites-available/speedtest
+    echo '        try_files $uri $uri/ =404;' >> /etc/nginx/sites-available/speedtest
+    echo "    }" >> /etc/nginx/sites-available/speedtest
+    echo "" >> /etc/nginx/sites-available/speedtest
+    echo "    location ~ \.php$ {" >> /etc/nginx/sites-available/speedtest
+    echo "        include snippets/fastcgi-php.conf;" >> /etc/nginx/sites-available/speedtest
+    echo "        fastcgi_pass unix:/var/run/php/php-fpm.sock;" >> /etc/nginx/sites-available/speedtest
+    echo "    }" >> /etc/nginx/sites-available/speedtest
+    echo "" >> /etc/nginx/sites-available/speedtest
+    echo "    location ~ /\.ht {" >> /etc/nginx/sites-available/speedtest
+    echo "        deny all;" >> /etc/nginx/sites-available/speedtest
+    echo "    }" >> /etc/nginx/sites-available/speedtest
+    echo "" >> /etc/nginx/sites-available/speedtest
+    echo "}" >> /etc/nginx/sites-available/speedtest
+
+    ln -s /etc/nginx/sites-available/speedtest /etc/nginx/sites-enabled/
+    unlink /etc/nginx/sites-enabled/default
+
+    systemctl reload nginx
+
+    fpm_version=$(ls /var/run/php | grep "php8.*fpm.sock") 
+    ini_location="/etc/php/${fpm_version:3:3}/fpm/php.ini"
+
+    sed -i 's/post_max_size = 8M/post_max_size = 100M/' $ini_location
+    sed -i 's/;extension=gd/extension=gd/' $ini_location
+    sed -i 's/;extension=pdo_sqlite/extension=pdo_sqlite/' $ini_location
+
+    systemctl restart nginx    
+
+    rm -rf ./speedtest
+    rm -rf /var/www/html/speedtest/*
+    
+    git clone https://github.com/librespeed/speedtest.git
+    cp -f ./speedtest/index.html /var/www/html/speedtest/
+    cp -f ./speedtest/speedtest.js /var/www/html/speedtest/
+    cp -f ./speedtest/speedtest_worker.js /var/html/www/speedtest/
+    cp -f ./speedtest/favicon.ico /var/www/html/speedtest/
+    cp -rf ./speedtest/backend/  /var/www/html/speedtest/
+    cp -rf ./speedtest/results/  /var/www/html/results/
+
+fi
+
 echo "---------------------------------------------------------------------"
 echo " "
 echo "Installations Complete!"
@@ -179,7 +240,14 @@ then
 	echo "Home Assistant can be accessed via: http://$LOCAL_IP:8123"
 fi
 
-if [ "$INSTALL_ZEROTIER" == "true" ]
+if [ "$INSTALL_LIBRE_SPEEDTEST" == "true" ]
+then
+	echo " "
+	echo "Finish Setting Up Libre Speed Test:"
+	echo "Libre Speed Test can be accessed via: http://$LOCAL_IP:11000"
+fi
+
+if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]
 then
 	echo " "
 	echo "Optional Zerotier Config:"

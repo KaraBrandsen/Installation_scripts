@@ -10,6 +10,8 @@ INSTALL_SONARR=true						#Install Sonarr - set to false to skip
 INSTALL_RADARR=true						#Install Radarr - set to false to skip
 INSTALL_PLEX=true						#Install Plex - set to false to skip
 
+source "secrets.sh"
+
 #Variables
 	#Zerotier
 		ZT_TOKEN=	 	                                		#Your Zerotier API Token - Get this from https://my.zerotier.com/account -> "new token"
@@ -17,30 +19,25 @@ INSTALL_PLEX=true						#Install Plex - set to false to skip
 	
 	#SABNZBd
 		SABNZBD_PORT=8001										#Port SABNZBD should be served on
-		SERVER_HOST=""		                    				#News server host name
-		SERVER_PORT=443											#News server port
-		SERVER_USERNAME=""	        							#News server username
-		SERVER_PASSWORD="#"	            						#News server password
-		SERVER_CONNECTIONS=20									#News server number of active connections
-		SERVER_SSL=1											#Should the news server use SSL
+        SERVER_HOST=$SERVER_HOST    		                    #News server host name
+		SERVER_PORT=$SERVER_PORT								#News server port
+		SERVER_USERNAME=$SERVER_USERNAME	        			#News server username
+		SERVER_PASSWORD=$SERVER_PASSWORD           				#News server password
+		SERVER_CONNECTIONS=$SERVER_CONNECTIONS					#News server number of active connections
+		SERVER_SSL=$SERVER_SSL									#Should the news server use SSL
 		
 	#Sonarr
 		SONARR_PORT=8989										#Port Sonarr should be served on
 		SONARR_ROOT_FOLDER=("/opt/series1" "/opt/series2")		#Folders to where you want to store series (Can already conatin a few)
-		INDEXER_NAME=""			           						#Indexer name
-		INDEXER_URL=""			                    			#Indexer host name
-		INDEXER_API_PATH="/api"									#Indexer path to the api
-		INDEXER_APIKEY=""	                                	#Indexer api key
+		INDEXER_NAME=$INDEXER_NAME			           			#Indexer name
+		INDEXER_URL=$INDEXER_URL		                    	#Indexer host name
+		INDEXER_API_PATH=$INDEXER_API_PATH						#Indexer path to the api
+		INDEXER_APIKEY=$INDEXER_APIKEY	                        #Indexer api key
 		
 	#Radarr
 		RADARR_PORT=7878										#Port Radarr should be served on
 		RADARR_ROOT_FOLDER=("/opt/movies1")						#Folders to where you want to store movies (Can already conatin a few)
-		INDEXER_NAME=""				        					#Indexer name
-		INDEXER_URL=""				                    		#Indexer host name
-		INDEXER_API_PATH="/api"									#Indexer path to the api
-		INDEXER_APIKEY=""		                                #Indexer api key
 	
-
 #Constants
 app_uid=$SUDO_USER
 app_guid=users
