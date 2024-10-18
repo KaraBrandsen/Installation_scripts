@@ -217,8 +217,8 @@ EOF
             echo -ne "$REMOTE_PASS\n$REMOTE_PASS\n" | passwd -q $REMOTE_USER
             echo -ne "$REMOTE_PASS\n$REMOTE_PASS\n" | smbpasswd -a -s $REMOTE_USER
         fi
-
-        echo "Samba share can now be accessed at: smb:/$ip_local/$MERGERFS_DIR"
+        SMB_URL="smb://$ip_local/$MERGERFS_DIR"
+        echo "Samba share can now be accessed at: $SMB_URL"
     fi
 fi
 
@@ -666,22 +666,30 @@ echo " "
 echo "Access Details:"
 if [ "$INSTALL_SABNZBD" == "true" ]
 then
-echo "SABNZBd:$SABNZBD_URL"
+echo "SABNZBd: $SABNZBD_URL"
 fi
 if [ "$INSTALL_SONARR" == "true" ]
 then
-echo "Sonarr:$SONARR_URL"
+echo "Sonarr: $SONARR_URL"
 fi
 if [ "$INSTALL_RADARR" == "true" ]
 then
-echo "Radarr:$RADARR_URL"
+echo "Radarr: $RADARR_URL"
 fi
 if [ "$INSTALL_PLEX" == "true" ]
 then
-echo "Plex:$PLEX_URL"
+echo "Plex: $PLEX_URL"
+fi
+echo ""
+if [ "$INSTALL_SHARES" == "true" ]
+then
+echo "SMB: $SMB_URL"
+echo "User: $REMOTE_USER"
+echo "Password": $REMOTE_PASS
 fi
 echo " "
 echo "Next Steps"
 echo "	1. You will need to log into Radarr/Sonarr (if installed) and set a user, password, and auth req to 'not required for local'"
 echo "	2. You will need to import existing media into Radarr/Sonarr"
-echo "	3. Start Plex from the apps menu and setup the server (Will need to manually add the libraries)"
+echo "	3. Start Plex from the apps menu and setup the server (You will need to manually add the libraries)"
+echo "  4. Mount the Shared folder on your windows/linux machine.
