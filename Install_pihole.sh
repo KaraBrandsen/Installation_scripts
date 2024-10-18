@@ -8,13 +8,19 @@
 INSTALL_PIHOLE=true							#Install Pihole - set to false to skip
 INSTALL_ZEROTIER_ROUTER=true				#Install Zerotier - set to false to skip
 INSTALL_HASS=true							#Install Home Assistant - set to false to skip
-INSTALL_LIBRE_SPEEDTEST=true
+INSTALL_LIBRE_SPEEDTEST=true                #Install Libre Speedtest - set to false to skip
+INSTALL_SHARES=true                         #Install MergerFS and SAMBA - set to false to skip
 
 source "secrets.sh"
 
 #Variables
 ZT_TOKEN=$ZT_TOKEN 	                        #Your Zerotier API Token - Get this from https://my.zerotier.com/account -> "new token"
 NWID=$NWID  				                #Your Zerotier Network ID - Get this from https://my.zerotier.com/
+REMOTE_USER=$SAMBA_USER                     #User to use for the SAMBA share. You will connect with this user.
+REMOTE_PASS=$SAMBA_PASS                     #The above user's password.
+HDD_IDS=()                                  #The IDs of the HDD's you wan to add to the pool - Get from: ls -l /dev/disk/by-id
+MERGERFS_DIR="default"                      #The directory name where the merged forlder should be mounted
+READ_ONLY_SHARES=no                         #Should the shared folder be read-only
 PHY_IFACE=default 							#The Network Interface to use - Default auto detects the interface
 DNS_1=8.8.8.8 								#DNS Server used by your ISP - Get this from ifconfig/connection properties on any PC or from your router. Leave as is to use Google's DNS server
 DNS_2=8.8.4.4 								#DNS Server used by your ISP - Get this from ifconfig/connection properties on any PC or from your router. Leave as is to use Google's DNS server
@@ -30,7 +36,7 @@ add-apt-repository multiverse -y
 apt update
 apt upgrade -y
 
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils -y
+apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g -y
 
 #Zerotier Router Setup
 if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]
@@ -91,6 +97,156 @@ then
 	apt-get -y install iptables-persistent
 	bash -c iptables-save > /etc/iptables/rules.v4
 fi
+
+#MergerFS Setup
+if [ "$INSTALL_SHARES" == "true" ]
+then
+    echo "Setting up Shared Folders"
+    apt install samba mergerfs -y
+
+    if [ ${#HDD_IDS[@]} -eq 0 ]; then
+        echo "No HDD configured using default options"
+        echo "Seaching for suitable drives..."
+
+        ls /dev/disk/by-id | grep -v "part\|DVD\|CD" | grep "ata" | while read -r drive ; do
+            echo "Found Drive: $drive"
+
+            partitions=$(ls /dev/disk/by-id | grep "$drive-part1")
+            
+            ls /dev/disk/by-id | grep "$drive-part" | while read -r partition ; do
+                mount_point=$(lsblk -r /dev/disk/by-id/$partition | grep "sd" | cut -d " " -f 7)
+                FSNAME=$(lsblk --fs /dev/disk/by-id/$drive | grep "sd" | cut -d " " -f 1)
+
+                if [[ "$FSNAME" = *"sda"* ]]; then
+                    echo "  Skipping primary drive: /dev/sda"
+                    continue
+                fi
+                
+                if [ -z ${mount_point} ]; then
+                    echo "  Found Partition: $partition which is not mounted"
+
+                    if [ -z ${FSTYPE} ]; then
+                        echo "      Partition $partition is not formatted. Formatting now..."
+                        mkfs.ntfs -f /dev/disk/by-id/$partition
+                    fi
+
+                    echo "      Adding partition to MergerFS Pool"
+                    echo $partition >> hdd_ids.temp
+                else
+                    echo "  Found Partition: $partition mounted at $mount_point"
+
+                    if [ "$mount_point" = "/" ] || [[ "$mount_point" = *"/boot/"* ]] || [[ "$mount_point" = *"/root/"* ]] || [[ "$mount_point" = *"/snap/"* ]]; then
+                        echo "      Partition mounted on root: skipping"
+                    else
+                        FSTYPE=$(lsblk --fs /dev/disk/by-id/$partition | grep "sd" | cut -d " " -f 2)
+                        
+                
+                        echo "      Adding partition to MergerFS Pool"
+                        echo $partition >> hdd_ids.temp
+                    fi
+                fi
+            done
+            
+            if [ -z ${partitions} ]; then
+                echo "  Drive has no paritions: "
+                echo "  Attempting to create them now..."
+
+                sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/disk/by-id/$drive
+                    o # clear the in memory partition table
+                    n # new partition
+                    p # primary partition
+                    1 # partition number 1
+                        # default, start immediately after preceding partition
+                        # default, extend partition to end of disk
+                    p # print the in-memory partition table
+                    w # write the partition table
+                    q # and we're done
+EOF
+                sleep 5
+                partition=$(ls /dev/disk/by-id | grep "$drive-part1")
+
+                echo "  Formatting with NTFS:"
+                mkfs.ntfs -f /dev/disk/by-id/$partition
+
+                echo "Adding to MergerFS pool"
+                echo $partition >> hdd_ids.temp
+            fi
+        done
+    fi
+
+    if [ ${#HDD_IDS[@]} -eq 0 ]; then
+        mapfile -t HDD_IDS < hdd_ids.temp
+        rm -f hdd_ids.temp
+    fi
+
+    if [ ${#HDD_IDS[@]} -eq 0 ]; then
+        echo "No suitable drives found for MergerFS. Skipping setup"
+    else
+        echo "Configuring MergerFS:"
+
+        COUNTER=1
+        for HDD_ID in ${HDD_IDS[@]}; do
+
+            #Check if HDD exists
+            FSNAME=$(lsblk -n -o NAME /dev/disk/by-id/$HDD_ID)
+            FSTYPE=$(lsblk -n -o FSTYPE /dev/disk/by-id/$HDD_ID)
+
+            if grep -F "/dev/disk/by-id/$HDD_ID /mnt/disk$COUNTER" /etc/fstab
+            then
+                echo "Found existing disk: $FSNAME, with partition type: $FSTYPE, mounted on: /mnt/disk$COUNTER"
+                COUNTER=$[ $COUNTER + 1 ]
+                continue
+            fi
+
+            echo "Detected new disk: $FSNAME with partition type: $FSTYPE"
+
+            mkdir -p /mnt/disk$COUNTER
+            echo "/dev/disk/by-id/$HDD_ID /mnt/disk$COUNTER   $FSTYPE defaults 0 0" >> /etc/fstab
+            mount /dev/disk/by-id/$HDD_ID /mnt/disk$COUNTER
+            COUNTER=$[ $COUNTER + 1 ]
+        done
+
+        if [ "$MERGERFS_DIR" == "default" ]; then
+            MERGERFS_DIR="NAS"
+        fi
+
+        if grep -F "/mnt/disk* /mnt/$MERGERFS_DIR fuse.mergerfs" /etc/fstab 
+        then
+            echo "MergerFS already found"
+        else
+            mkdir -p /mnt/$MERGERFS_DIR
+
+            echo "/mnt/disk*/ /mnt/$MERGERFS_DIR fuse.mergerfs defaults,nonempty,allow_other,use_ino,cache.files=off,moveonenospc=true,dropcacheonclose=true,minfreespace=20G,fsname=mergerfs 0 0" >> /etc/fstab
+            mergerfs -o defaults,nonempty,allow_other,use_ino,cache.files=off,moveonenospc=true,dropcacheonclose=true,minfreespace=20G,fsname=mergerfs /mnt/disk\* /mnt/$MERGERFS_DIR
+        fi
+
+        if grep -F "comment = MergerFS Share" /etc/samba/smb.conf
+        then
+            echo "Share Already Exists"
+        else
+            echo "[$MERGERFS_DIR]" >> /etc/samba/smb.conf
+            echo "    comment = MergerFS Share" >> /etc/samba/smb.conf
+            echo "    path = /mnt/$MERGERFS_DIR" >> /etc/samba/smb.conf
+            echo "    read only = $READ_ONLY_SHARES" >> /etc/samba/smb.conf
+            echo "    browsable = yes" >> /etc/samba/smb.conf
+
+            service smbd restart
+            ufw allow samba
+
+            if [ "$REMOTE_USER" == "default" ]; then
+                REMOTE_USER=$SUDO_USER
+            fi
+
+            useradd $REMOTE_USER
+            sleep 1
+            echo -ne "$REMOTE_PASS\n$REMOTE_PASS\n" | passwd -q $REMOTE_USER
+            echo -ne "$REMOTE_PASS\n$REMOTE_PASS\n" | smbpasswd -a -s $REMOTE_USER
+        fi
+
+        echo "Samba share can now be accessed at: smb:/$ip_local/$MERGERFS_DIR"
+    fi
+fi
+
 #PiHole
 if [ "$INSTALL_PIHOLE" == "true" ]
 then
