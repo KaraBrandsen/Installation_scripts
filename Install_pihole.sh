@@ -9,7 +9,7 @@ INSTALL_PIHOLE=true							#Install Pihole - set to false to skip
 INSTALL_ZEROTIER_ROUTER=true				#Install Zerotier - set to false to skip
 INSTALL_HASS=true							#Install Home Assistant - set to false to skip
 INSTALL_LIBRE_SPEEDTEST=true                #Install Libre Speedtest - set to false to skip
-INSTALL_SHARES=true                         #Install MergerFS and SAMBA - set to false to skip
+INSTALL_SHARES=false                         #Install MergerFS and SAMBA - set to false to skip
 
 source "secrets.sh"
 
@@ -36,14 +36,14 @@ add-apt-repository multiverse -y
 apt update
 apt upgrade -y
 
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g -y
+apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g iperf3 ufw -y
 
 #Zerotier Router Setup
 if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]
 then
 	if [ "$PHY_IFACE" == "default" ]
 	then
-		PHY_IFACE=$(ifconfig | grep -E 'eth|enp' | cut -d ":" -f 1 | cut -d " " -f 1 | xargs)
+		PHY_IFACE=$(ifconfig | grep -E 'eth|enp|end' | cut -d ":" -f 1 | cut -d " " -f 1 | xargs)
 		echo "Detected Ethernet Connection: $PHY_IFACE"
 	fi
 	
@@ -108,19 +108,14 @@ then
         echo "No HDD configured using default options"
         echo "Seaching for suitable drives..."
 
-        ls /dev/disk/by-id | grep -v "part\|DVD\|CD" | grep "ata" | while read -r drive ; do
+        ls /dev/disk/by-id | grep -v "part\|DVD\|CD" | grep "ata\|usb\|nvme" | while read -r drive ; do
             echo "Found Drive: $drive"
 
             partitions=$(ls /dev/disk/by-id | grep "$drive-part1")
             
             ls /dev/disk/by-id | grep "$drive-part" | while read -r partition ; do
                 mount_point=$(lsblk -r /dev/disk/by-id/$partition | grep "sd" | cut -d " " -f 7)
-                FSNAME=$(lsblk --fs /dev/disk/by-id/$drive | grep "sd" | cut -d " " -f 1)
-
-                if [[ "$FSNAME" = *"sda"* ]]; then
-                    echo "  Skipping primary drive: /dev/sda"
-                    continue
-                fi
+                FSTYPE=$(lsblk -n -o FSTYPE /dev/disk/by-id/$partition)
                 
                 if [ -z ${mount_point} ]; then
                     echo "  Found Partition: $partition which is not mounted"
@@ -138,9 +133,7 @@ then
                     if [ "$mount_point" = "/" ] || [[ "$mount_point" = *"/boot/"* ]] || [[ "$mount_point" = *"/root/"* ]] || [[ "$mount_point" = *"/snap/"* ]]; then
                         echo "      Partition mounted on root: skipping"
                     else
-                        FSTYPE=$(lsblk --fs /dev/disk/by-id/$partition | grep "sd" | cut -d " " -f 2)
-                        
-                
+
                         echo "      Adding partition to MergerFS Pool"
                         echo $partition >> hdd_ids.temp
                     fi
@@ -186,8 +179,13 @@ EOF
 
         COUNTER=1
         for HDD_ID in ${HDD_IDS[@]}; do
+            HDD=$(ls /dev/disk/by-id | grep "$HDD_ID")
 
-            #Check if HDD exists
+            if [ -z ${HDD} ]; then
+                echo "Invalid disk ID: $HDD_ID, skipping"
+                continue
+            fi
+
             FSNAME=$(lsblk -n -o NAME /dev/disk/by-id/$HDD_ID)
             FSTYPE=$(lsblk -n -o FSTYPE /dev/disk/by-id/$HDD_ID)
 
@@ -242,8 +240,8 @@ EOF
             echo -ne "$REMOTE_PASS\n$REMOTE_PASS\n" | passwd -q $REMOTE_USER
             echo -ne "$REMOTE_PASS\n$REMOTE_PASS\n" | smbpasswd -a -s $REMOTE_USER
         fi
-
-        echo "Samba share can now be accessed at: smb:/$ip_local/$MERGERFS_DIR"
+        SMB_URL="smb://$ip_local/$MERGERFS_DIR"
+        echo "Samba share can now be accessed at: $SMB_URL"
     fi
 fi
 
@@ -320,9 +318,6 @@ if [ "$INSTALL_LIBRE_SPEEDTEST" == "true" ]
 then
     apt install nginx mysql-server php-fpm php-mysql php-image-text php-gd php-sqlite3 -y
 
-    mkdir -p /var/www/html/speedtest
-    chown -R $SUDO_USER:$SUDO_USER /var/www/html/speedtest
-
     rm -rf /etc/nginx/sites-available/speedtest
 
     echo "server {" > /etc/nginx/sites-available/speedtest
@@ -361,17 +356,23 @@ then
 
     systemctl restart nginx    
 
-    rm -rf ./speedtest
-    rm -rf /var/www/html/speedtest/*
+    
+    rm -rf /var/www/html/speedtest/
+    mkdir -p /var/www/html/speedtest
+    chown -R $SUDO_USER:$SUDO_USER /var/www/html/speedtest
     
     git clone https://github.com/librespeed/speedtest.git
+
+    sleep 3
+
     cp -f ./speedtest/index.html /var/www/html/speedtest/
     cp -f ./speedtest/speedtest.js /var/www/html/speedtest/
-    cp -f ./speedtest/speedtest_worker.js /var/html/www/speedtest/
+    cp -f ./speedtest/speedtest_worker.js /var/www/html/speedtest/
     cp -f ./speedtest/favicon.ico /var/www/html/speedtest/
     cp -rf ./speedtest/backend/  /var/www/html/speedtest/
     cp -rf ./speedtest/results/  /var/www/html/results/
 
+    rm -rf ./speedtest
 fi
 
 echo "---------------------------------------------------------------------"
@@ -401,6 +402,15 @@ then
 	echo " "
 	echo "Finish Setting Up Libre Speed Test:"
 	echo "Libre Speed Test can be accessed via: http://$LOCAL_IP:11000"
+fi
+
+if [ "$INSTALL_SHARES" == "true" ]
+then
+    echo " "
+	echo "Finish Setting Up MergerFS with Samba:"
+    echo "Samba can now be accessed at: $SMB_URL"
+    echo "User: $REMOTE_USER"
+    echo "Password": $REMOTE_PASS
 fi
 
 if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]

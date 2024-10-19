@@ -36,7 +36,7 @@ source "secrets.sh"
 		
 	#Sonarr
 		SONARR_PORT=8989										#Port Sonarr should be served on
-		SONARR_ROOT_FOLDER=("/opt/series1" "/opt/series2")		#Folders to where you want to store series (Can already conatin a few)
+		SONARR_ROOT_FOLDER=("/mnt/nas/series")		            #Folders to where you want to store series (Can already conatin a few)
 		INDEXER_NAME=$INDEXER_NAME			           			#Indexer name
 		INDEXER_URL=$INDEXER_URL		                    	#Indexer host name
 		INDEXER_API_PATH=$INDEXER_API_PATH						#Indexer path to the api
@@ -44,7 +44,7 @@ source "secrets.sh"
 		
 	#Radarr
 		RADARR_PORT=7878										#Port Radarr should be served on
-		RADARR_ROOT_FOLDER=("/opt/movies1")						#Folders to where you want to store movies (Can already conatin a few)
+        RADARR_ROOT_FOLDER=("/mnt/nas/movies")		        	#Folders to where you want to store movies (Can already conatin a few)
 	
 #Constants
 app_uid=$SUDO_USER
@@ -58,7 +58,7 @@ if [ "$EUID" -ne 0 ]
 fi
 
 apt update
-apt install curl sqlite3 nano openssh-server net-tools bzip2 build-essential ntfs-3g -y
+apt install curl sqlite3 nano openssh-server net-tools bzip2 build-essential ntfs-3g iperf3 ufw -y
 
 #Zerotier Setup
 if [ "$INSTALL_ZEROTIER" == "true" ]
@@ -83,19 +83,14 @@ then
         echo "No HDD configured using default options"
         echo "Seaching for suitable drives..."
 
-        ls /dev/disk/by-id | grep -v "part\|DVD\|CD" | grep "ata" | while read -r drive ; do
+        ls /dev/disk/by-id | grep -v "part\|DVD\|CD" | grep "ata\|usb\|nvme" | while read -r drive ; do
             echo "Found Drive: $drive"
 
             partitions=$(ls /dev/disk/by-id | grep "$drive-part1")
             
             ls /dev/disk/by-id | grep "$drive-part" | while read -r partition ; do
                 mount_point=$(lsblk -r /dev/disk/by-id/$partition | grep "sd" | cut -d " " -f 7)
-                FSNAME=$(lsblk --fs /dev/disk/by-id/$drive | grep "sd" | cut -d " " -f 1)
-
-                if [[ "$FSNAME" = *"sda"* ]]; then
-                    echo "  Skipping primary drive: /dev/sda"
-                    continue
-                fi
+                FSTYPE=$(lsblk -n -o FSTYPE /dev/disk/by-id/$partition)
                 
                 if [ -z ${mount_point} ]; then
                     echo "  Found Partition: $partition which is not mounted"
@@ -113,9 +108,7 @@ then
                     if [ "$mount_point" = "/" ] || [[ "$mount_point" = *"/boot/"* ]] || [[ "$mount_point" = *"/root/"* ]] || [[ "$mount_point" = *"/snap/"* ]]; then
                         echo "      Partition mounted on root: skipping"
                     else
-                        FSTYPE=$(lsblk --fs /dev/disk/by-id/$partition | grep "sd" | cut -d " " -f 2)
-                        
-                
+
                         echo "      Adding partition to MergerFS Pool"
                         echo $partition >> hdd_ids.temp
                     fi
@@ -161,8 +154,13 @@ EOF
 
         COUNTER=1
         for HDD_ID in ${HDD_IDS[@]}; do
+            HDD=$(ls /dev/disk/by-id | grep "$HDD_ID")
 
-            #Check if HDD exists
+            if [ -z ${HDD} ]; then
+                echo "Invalid disk ID: $HDD_ID, skipping"
+                continue
+            fi
+
             FSNAME=$(lsblk -n -o NAME /dev/disk/by-id/$HDD_ID)
             FSTYPE=$(lsblk -n -o FSTYPE /dev/disk/by-id/$HDD_ID)
 
@@ -182,7 +180,7 @@ EOF
         done
 
         if [ "$MERGERFS_DIR" == "default" ]; then
-            MERGERFS_DIR="NAS"
+            MERGERFS_DIR="nas"
         fi
 
         if grep -F "/mnt/disk* /mnt/$MERGERFS_DIR fuse.mergerfs" /etc/fstab 
