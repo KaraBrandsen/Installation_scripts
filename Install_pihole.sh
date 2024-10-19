@@ -36,7 +36,7 @@ add-apt-repository multiverse -y
 apt update
 apt upgrade -y
 
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g iperf3 ufw -y
+apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g ufw -y
 
 #Zerotier Router Setup
 if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]

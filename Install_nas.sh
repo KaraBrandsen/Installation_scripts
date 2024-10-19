@@ -58,7 +58,7 @@ if [ "$EUID" -ne 0 ]
 fi
 
 apt update
-apt install curl sqlite3 nano openssh-server net-tools bzip2 build-essential ntfs-3g iperf3 ufw -y
+apt install curl sqlite3 nano openssh-server net-tools bzip2 build-essential ntfs-3g ufw -y
 
 #Zerotier Setup
 if [ "$INSTALL_ZEROTIER" == "true" ]
@@ -410,7 +410,7 @@ then
 	esac
 
 	rm -f "${app^}".*.tar.gz
-	wget --content-disposition "$DLURL"
+	wget --inet4-only --content-disposition "$DLURL"
 	tar -xvzf "${app^}".*.tar.gz
 	echo "Installation files downloaded and extracted"
 
@@ -452,7 +452,7 @@ EOF
 	systemctl enable --now -q "$app"
 
 	echo ""
-	echo "Install complete: wiating for Sonarr to start"
+	echo "Install complete: waiting for Sonarr to start"
 	sleep 15
 	STATUS="$(systemctl is-active "$app")"
 	if [ "${STATUS}" = "active" ]; then
@@ -544,7 +544,7 @@ then
 	sleep 3
 	rm -f "${app^}".*.tar.gz
 	echo -e "Downloading required files..."
-	wget --content-disposition "$DLURL"
+	wget --inet4-only --content-disposition "$DLURL"
 	tar -xvzf "${app^}".*.tar.gz >/dev/null 2>&1
 	echo -e "Installation files downloaded and extracted!"
 
