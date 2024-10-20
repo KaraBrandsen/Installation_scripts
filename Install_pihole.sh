@@ -9,7 +9,7 @@ INSTALL_PIHOLE=true							#Install Pihole - set to false to skip
 INSTALL_ZEROTIER_ROUTER=true				#Install Zerotier - set to false to skip
 INSTALL_HASS=true							#Install Home Assistant - set to false to skip
 INSTALL_LIBRE_SPEEDTEST=true                #Install Libre Speedtest - set to false to skip
-INSTALL_SHARES=false                         #Install MergerFS and SAMBA - set to false to skip
+INSTALL_SHARES=false                        #Install MergerFS and SAMBA - set to false to skip
 
 source "secrets.sh"
 
@@ -32,11 +32,15 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+
 add-apt-repository multiverse -y
 apt update
 apt upgrade -y
 
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g ufw -y
+apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop net-tools cifs-utils bzip2 ntfs-3g ufw bmon -y
 
 #Zerotier Router Setup
 if [ "$INSTALL_ZEROTIER_ROUTER" == "true" ]
@@ -382,7 +386,7 @@ echo "Installations Complete!"
 if [ "$INSTALL_PIHOLE" == "true" ]
 then
 	echo " "
-	echo "Finish Setting Up Pihole:"
+	echo "Finished Setting Up Pihole:"
 	echo "Change default password (Password):"
 	echo "	sudo pihole -a -p"
 	echo "NB: You will now need to log into your router and configure the DHCP settings to use $LOCAL_IP as the primary DNS server"
@@ -393,21 +397,21 @@ fi
 if [ "$INSTALL_HASS" == "true" ]
 then
 	echo " "
-	echo "Finish Setting Up Home Assistant:"
+	echo "Finished Setting Up Home Assistant:"
 	echo "Home Assistant can be accessed via: http://$LOCAL_IP:8123"
 fi
 
 if [ "$INSTALL_LIBRE_SPEEDTEST" == "true" ]
 then
 	echo " "
-	echo "Finish Setting Up Libre Speed Test:"
+	echo "Finished Setting Up Libre Speed Test:"
 	echo "Libre Speed Test can be accessed via: http://$LOCAL_IP:11000"
 fi
 
 if [ "$INSTALL_SHARES" == "true" ]
 then
     echo " "
-	echo "Finish Setting Up MergerFS with Samba:"
+	echo "Finished Setting Up MergerFS with Samba:"
     echo "Samba can now be accessed at: $SMB_URL"
     echo "User: $REMOTE_USER"
     echo "Password": $REMOTE_PASS
