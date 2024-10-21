@@ -62,7 +62,7 @@ sysctl -w net.ipv6.conf.default.disable_ipv6=1
 sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 
 apt update
-apt install curl sqlite3 nano openssh-server net-tools bzip2 build-essential ntfs-3g ufw -y
+apt install curl sqlite3 nano htop bmon openssh-server net-tools bzip2 build-essential ntfs-3g ufw -y
 
 #Zerotier Setup
 if [ "$INSTALL_ZEROTIER" == "true" ]

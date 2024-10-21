@@ -4,6 +4,9 @@ source "secrets.sh"
 #Variables
 ZT_TOKEN=$ZT_TOKEN
 NWID=$NWID
+
+WIN_HOST=192.168.194.1
+WIN_SHARES=( D E F G )
 WIN_USER=$WIN_USER
 WIN_PASS=$WIN_PASS
 
@@ -28,7 +31,17 @@ add-apt-repository multiverse -y
 apt update
 apt upgrade -y
 
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop flatpak net-tools gnome-software-plugin-flatpak gnome-shell-extension-manager steam piper gir1.2-gtop-2.0 lm-sensors gnome-tweaks cifs-utils gparted -y
+apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop bmon flatpak net-tools dbus-x11 gnome-software-plugin-flatpak gnome-shell-extension-manager piper gir1.2-gtop-2.0 lm-sensors gnome-tweaks cifs-utils ntfs-3g gparted -y
+
+VERSION=$(lsb_release -a | grep "Release" | cut -d ':' -f 2 | xargs | cut -d '.' -f 1)
+
+if [ "$VERSION" -gt 22 ]; then
+        dpkg --add-architecture i386
+        apt update
+        apt install steam-installer -y
+else
+        apt install steam -y
+fi
 
 snap install --classic code
 
@@ -48,17 +61,20 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 flatpak install flathub com.google.Chrome com.discordapp.Discord org.videolan.VLC com.spotify.Client org.gimp.GIMP org.libreoffice.LibreOffice io.github.mimbrero.WhatsAppDesktop org.signal.Signal org.inkscape.Inkscape com.slack.Slack com.adobe.Reader com.skype.Client tv.plex.PlexDesktop cc.arduino.IDE2 org.raspberrypi.rpi-imager com.ultimaker.cura io.github.prateekmedia.appimagepool org.kicad.KiCad org.gnome.meld org.qbittorrent.qBittorrent com.notepadqq.Notepadqq org.wireshark.Wireshark us.zoom.Zoom -y
 
 #Windows Shares
-#mkdir /media/D
-#mkdir /media/E
-#mkdir /media/F
-#mkdir /media/G
 
-#echo -e "//192.168.194.1/D  /media/D  cifs username=$WIN_USER,password=$WIN_PASS,iocharset=utf8  0  0" >> /etc/fstab
-#echo -e "//192.168.194.1/E  /media/E  cifs username=$WIN_USER,password=$WIN_PASS,iocharset=utf8  0  0" >> /etc/fstab
-#echo -e "//192.168.194.1/F  /media/F  cifs username=$WIN_USER,password=$WIN_PASS,iocharset=utf8  0  0" >> /etc/fstab
-#echo -e "//192.168.194.1/G  /media/G  cifs username=$WIN_USER,password=$WIN_PASS,iocharset=utf8  0  0" >> /etc/fstab
+for SHARE in ${WIN_SHARES[@]}; do
+    mkdir -p /media/$SHARE
 
-#mount -a
+    if grep -F "/media/$SHARE" /etc/fstab
+    then
+        echo "Found existing share: $SHARE"
+        continue
+    fi
+
+    echo -e "//$WIN_HOST/$SHARE  /media/$SHARE  cifs username=$WIN_USER,password=$WIN_PASS,iocharset=utf8  0  0" >> /etc/fstab
+done
+
+mount -a
 
 #Shell Extensions
 apt install gnome-menus
@@ -67,8 +83,7 @@ for i in "${EXTENSION_LIST[@]}"
 do
     EXTENSION_ID=$(curl -s $i | grep -oP 'data-uuid="\K[^"]+')
     VERSION_TAG=$(curl -Lfs "https://extensions.gnome.org/extension-query/?search=$EXTENSION_ID" | jq '.extensions | map(select(.uuid=="'$EXTENSION_ID'")) | .[0].shell_version_map | map(.pk) | max')
-    echo $EXTENSION_ID
-    echo $VERSION_TAG
+
     wget --inet4-only -O ${EXTENSION_ID}.zip "https://extensions.gnome.org/download-extension/${EXTENSION_ID}.shell-extension.zip?version_tag=$VERSION_TAG"
     sudo -u $SUDO_USER -H -s gnome-extensions install --force ${EXTENSION_ID}.zip
     sudo -u $SUDO_USER -H -s gnome-extensions enable ${EXTENSION_ID}
@@ -80,13 +95,13 @@ then
     echo "No extension settings configured"
 else
     echo "Loading extension settings"
-    echo $EXTENSION_SETTINGS | base64 -d | gunzip >> ./extension_settings.conf
+    echo $EXTENSION_SETTINGS | base64 -d | gunzip >> /home/$SUDO_USER/extension_settings.conf
 
     sudo  -i -u $SUDO_USER bash <<-EOF
 	   cat /home/$SUDO_USER/extension_settings.conf | dconf load /org/gnome/shell/
 EOF
 
-    rm ./extension_settings.conf
+    rm /home/$SUDO_USER/extension_settings.conf
 fi
 
 echo "Script done. You will have to restart to apply the changes"
