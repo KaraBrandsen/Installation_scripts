@@ -46,7 +46,7 @@ source "secrets.sh"
         DNS_4=2001:4860:4860::8844  				#DNS Server used by your ISP - Leave as is if the ISP has not IPV6 DNS
 
     #Shell Extensions
-        EXTENSION_SETTINGS='H4sIAAAAAAAAA+1VS2/bRhC+81cYvDABtIrkOglqlIXsxAehUiw4QoHCEIIlOSQ3Wu4Iu0M9avi/d5akFMsxikDpsaclZ+e1M983c/9mEWTKyURDJmBLYJxC4+L7qE5qQ7XIMF2O2u9+ilW0CMC8oC1tWoGpR93ZqPbOoky6UhCKlTSgR18zsOjg136hqKyTvVLhUjQGUhpJk+1K1BW4vYpCr/G1diRWYHNW4oAiA7ckXI2eyb3qn4qkdqMPaOEDZsoUXda5XKNVBEKuVj7hXFnIcfulO/udS+8CbdEvDFbQ/yRrUrp2L9/OwVbKSH24XQQb0BwORKakxkJoyfm5EjdGrMH6WsXRxbv+IAqC+2/le+PTXARpCelSbIfDjdxprkRMtoZjRU6GVYV0TjmShhaB5IevQWyUyXAjSmVIpKjRxpEtklfnw2Hv/aB3PnwdBU0uXRZCGbbX3MX44l2ALLUqy8AIB0QcwcUPT95Z1URg+5AVINoMosuz30ZVcmaQOGTx+1FZOvUl7BLOynvrExaFbowZNxpy+ikHVhXldx4ejyvV4ZDBDbmsNQn/J9YKNnF0pfWXmcXCyspFQXORcEguC2MDpJUmhTgaMyijYMXocGznFGOeYVxAPAgcK6WlAEN2JxK0DGthZaZqF7/yTeudnb99Hfi+NySxjBGG7Fql4F5o6hFHuKNGVbLFqeIUROnbI1qpb11jSdygu/FsNrnhOlxw9WaTq09/dN+fx9P2YvgY7L1U0hbKxBcHwUpmvrRespZKe0qLCo0itEyPARcOmVroFDWovb6dz2+nUVAicV+c8ElpuWOwVQnG0fxmOru9u7obT/5ipHGDE9weQohh0LyNH5GW3n30EA7Cy3A6/vhxchM+Rt01aOBmfIu6V7x/CLsrNvJVvWIKXzcdC3th15vwMmfeQy/cW3tdkukSsvkkfOw99dGQhpXgp7z4Z17j9qlx0/wfsSXplom0J9mmfID9wcjXd8+sG/Kcaux2jqCaMmNOMs8Y16cbt0P2+479m4fFAVwaTEHlHlLDweBw49TfsJf/cu7FlrnGzO7o4AlPkmonjojDqCbLDHjy301hnhl+0PC0Ij8zDhya386eDf5n+4t3gOZ1286qg93gJanAPOdhzZf/b+//bHu3eOh2QdfXBh5c5tM2+7p5z6LdBYn0e23XroBGkksTNwOn/V2jJr9hGoV/AHAM7teaCQAA'
+        EXTENSION_SETTINGS='H4sIAAAAAAAAA+VWS2/jOAy++1cUuXgXqOIk7XSaAgb6mkOx7TToFgssiqBQJNrWRJYMic5jiv73pRwnTV+LorO3vSQ2yY8SyY+k7yT4KdoqqcCpqgDHtU9KW3sYR4ZjTe/MC2e1TjNSQRTdvYVAW4ui4vIdEM4ty5TJwbVyemZg+ESDTNHVz9w6NeNiOY4cVNYhQxCFUYJcVs4SoPQvEQ5Ki8A2r7IaRyvnK0vUnglwmMZJYUtIptzxpKst+Ux8wR0kuSE5e+2HEbQrHMaNjyksP+mCkPH7F54ZMY54jQUrAQsr07ji3s+tk/GzOJ4cePBeWTOOlNTBj+bLtFYG9wY7w16PDD0gUo49k5zOMkml61wZn1R2Dm4NU2VbHq8BKqYMF6hmwLhgqEqwNaZ7B+TuDfWygjQ2Fgs6JETmC9B6HEnlw3UZ0ccxWCCYcE3fHtNq5bbmLq4ntcGaSSumx6vnrrBlvC7hC2vuRAmmPm7/G9PdnVhyXzC0rOIG9PEPCc56GHZzhUU9WRvlXlhjQOAxN3JZWF2CX5soGyx+1B4Z8TojIzpwXaHjF/Jg+pdCCur4zDo4s5LS0N464zPrFFWXV1W4MEm7ubW5hu5Z4Ygj3dZpcGJd3m2I0/1O9Ve69m9rb8GVlH+9rcVZt9Kw6I7o53wl3qjH0Ry0CISUimubM80pAF/YuWEzcCGZabx/0O1tapc8ZTlpc0vlhIzXGll4YzMF8zQ+0fp+5GzueOnjqFFMakTKFcUL1BVGEDMuKNFxVDnIPOG8CpyoeA5pj7pagEG9JD55ymAocJspb3jFPFJC71tOeJvhnJprKy5PZ4iCZge6JZtQixDRHJeq9ulvoUl2dwZffo9CpA1vHCWNqjhTAjZj41W8z8hDnWhUyVcFVBQHKyyljK2kgRQNEtOH+OZiNLr8Fh/t7FM5Rpcn3/9on/+8uFop+o/R2kvJHXVgur8R0LQMtAmSGVe66RtqVUUJoGz0KPuWOGe9wqZap9e3t9dXcVRYpGniWbgUtT2jKk9sGt9+uxpd35zcXFz+HUcaMpzYxeYI1o+a2CgIUQT38UOn1znqXF2cn19+6zzGrRpoulJom1PXhncPnVZFoJDbE6rYaVP2zm6nLXDnqOny3c4aHWyRiynI28vO4+62j2aSkBH8kpcQ5qldbIMbCnwEi9xPJ9x9ChsIDO6DJ5/evEA7lRcfvfYrsF96hPKK2u5TcEm8/jx41YSvK/ZvHsYbcmkwORZrSvV7vY3Gq5+wlu8NgthRr1F/t+1AU4M8Yu3Zs8YhVqOjDth6nysjqfNp8IRpRVsMw+DZ9NDt9ejNgRfg40gUIKZs0e/P+VLThnh3XrzYBoSkD4HpakpuDuu9JWU2y2g1k/J/uQszRRvBLu7b//9kE45bErVbqCVDwylK86+swVkTFflfF0+ZVU5pZDcLZsKR5sByxZNGknGz/qQKrzOrMWy9lkjY3j3RkNMXLn3p2kxp8EfJ0aQvhRhKyb4MDgZsXx7SVjw82GPicPgVDuTw63AyfNrHITga/LouiQf9Qe+5wtm5pw+36B8kf6MK2wsAAA=='
         EXTENSION_LIST=( https://extensions.gnome.org/extension/1160/dash-to-panel/
  https://extensions.gnome.org/extension/1460/vitals/
  https://extensions.gnome.org/extension/3628/arcmenu/
@@ -99,6 +99,7 @@ if [ "$ARG" == "desktop" ]; then
             apt install steam -y
     fi
 
+    snap refresh
     snap install --classic code
 
     flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo 
@@ -148,7 +149,7 @@ fi
 
 apt update
 apt upgrade -y
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop bmon net-tools bzip2 ntfs-3g ufw bmon -y
+apt install curl nano jq build-essential openssh-server git python3-pip pipx python3-dev htop bmon net-tools bzip2 ntfs-3g ufw bmon -y
 
 #Constants
 APP_UID=$SUDO_USER
@@ -1029,11 +1030,12 @@ then
         echo $EXTENSION_SETTINGS | base64 -d | gunzip >> /home/$SUDO_USER/extension_settings.conf
 
         sudo  -i -u $SUDO_USER bash <<-EOF
-        cat /home/$SUDO_USER/extension_settings.conf | dconf load /org/gnome/shell/
+        cat /home/$SUDO_USER/extension_settings.conf | dconf load /org/gnome/
 EOF
 
         rm /home/$SUDO_USER/extension_settings.conf
     fi
+
     echo "Installled Shell Extensions"
 fi
 
