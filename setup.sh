@@ -55,15 +55,18 @@ source "secrets.sh"
 
 
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
+  then 
+  echo "Please run as root"
   exit
 fi
+
+ARG=${1:-"desktop"}   
 
 sysctl -w net.ipv6.conf.all.disable_ipv6=1
 sysctl -w net.ipv6.conf.default.disable_ipv6=1
 sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 
-if [ "$1" == "desktop" ]; then
+if [ "$ARG" == "desktop" ]; then
     echo "Running desktop setup"
     echo "----------------------------------------------------------------------------------"
 
@@ -77,14 +80,14 @@ if [ "$1" == "desktop" ]; then
     INSTALL_SONARR=false					#Install Sonarr - set to false to skip
     INSTALL_RADARR=false					#Install Radarr - set to false to skip
     INSTALL_PLEX=false						#Install Plex Server - set to false to skip
-    INSTALL_SHARES=true                     #Install Windows Shares - set to false to skip
+    INSTALL_SHARES=false                    #Install Windows Shares - set to false to skip
     INSTALL_SHELL_EXTENSIONS=true           #Install Shell Extensions - set to false to skip
 
     add-apt-repository multiverse -y
     apt update
     apt upgrade -y
 
-    apt install flatpak dbus-x11 gnome-software-plugin-flatpak gnome-shell-extension-manager piper gir1.2-gtop-2.0 lm-sensors gnome-tweaks gparted -y
+    apt install flatpak gnome-software-plugin-flatpak gnome-shell-extension-manager piper gir1.2-gtop-2.0 lm-sensors gnome-tweaks gparted -y
 
     VERSION=$(lsb_release -a | grep "Release" | cut -d ':' -f 2 | xargs | cut -d '.' -f 1)
 
@@ -102,7 +105,7 @@ if [ "$1" == "desktop" ]; then
     flatpak install flathub com.google.Chrome com.discordapp.Discord org.videolan.VLC com.spotify.Client org.gimp.GIMP org.libreoffice.LibreOffice io.github.mimbrero.WhatsAppDesktop org.signal.Signal org.inkscape.Inkscape com.slack.Slack com.adobe.Reader com.skype.Client tv.plex.PlexDesktop cc.arduino.IDE2 org.raspberrypi.rpi-imager com.ultimaker.cura io.github.prateekmedia.appimagepool org.kicad.KiCad org.gnome.meld org.qbittorrent.qBittorrent com.notepadqq.Notepadqq org.wireshark.Wireshark us.zoom.Zoom -y
 fi
 
-if [ "$1" == "nas" ]; then
+if [ "$ARG" == "nas" ]; then
     echo "Running NAS setup"
     echo "----------------------------------------------------------------------------------"
 
@@ -116,14 +119,14 @@ if [ "$1" == "nas" ]; then
     INSTALL_SONARR=true 					#Install Sonarr - set to false to skip
     INSTALL_RADARR=true 					#Install Radarr - set to false to skip
     INSTALL_PLEX=true  						#Install Plex Server- set to false to skip
-    INSTALL_SHARES=true                     #Install Windows Shares - set to false to skip
+    INSTALL_SHARES=false                    #Install Windows Shares - set to false to skip
     INSTALL_SHELL_EXTENSIONS=true           #Install Shell Extensions - set to false to skip
 
     apt update
     apt install sqlite3 -y
 fi
 
-if [ "$1" == "pihole" ]; then
+if [ "$ARG" == "pihole" ]; then
     echo "Running pihole setup"
     echo "----------------------------------------------------------------------------------"
 
@@ -145,7 +148,7 @@ fi
 
 apt update
 apt upgrade -y
-apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop bmon net-tools bzip2 ntfs-3g ufw bmon
+apt install curl nano build-essential openssh-server git python3-pip pipx python3-dev htop bmon net-tools bzip2 ntfs-3g ufw bmon -y
 
 #Constants
 APP_UID=$SUDO_USER
@@ -981,7 +984,7 @@ if [ "$INSTALL_SHARES" == "true" ]
 then
     echo "-----------------------------Installing Windows Shares-----------------------------"
 
-    apt install cifs-utils
+    apt install cifs-utils -y
 
     for SHARE in ${WIN_SHARES[@]}; do
         mkdir -p /media/$SHARE
@@ -1003,7 +1006,7 @@ fi
 if [ "$INSTALL_SHELL_EXTENSIONS" == "true" ]
 then
     echo "-----------------------------Installing Shell Extensions-----------------------------"
-    apt install gnome-menus
+    apt install gnome-menus dbus-x11 -y
 
     for i in "${EXTENSION_LIST[@]}"
     do
